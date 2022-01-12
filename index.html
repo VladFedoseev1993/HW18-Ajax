@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,19 +8,14 @@
     <link rel="stylesheet" href="./style.css">
     <title>Ajax</title>
 </head>
-<body>
-    <div>
-        <form>
-            <ul>
-              <li id="item"></li>  
-            </ul>
-            <input type="text" id="title" placeholder="title">
-            <input type="text" id="author" placeholder="author">
-            <button type="submit" id="submitPosts">create</button>
-        </form>
-    </div>
-   
 
+<body>
+    <form id="form">
+        <input autofocus class="input-add" name="task" id="task" placeholder="enter something">
+        <button id="add">create</button>
+    </form>
+    <ul id="list"></ul>
     <script defer src="./script.js"></script>
 </body>
+
 </html>

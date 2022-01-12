@@ -1,72 +1,143 @@
-let ul = document.querySelector('ul');
-let li = document.querySelector('li');
-let postLists = document.querySelector('div');
-let formPosts = document.querySelector('form');
-let inputTitle = document.querySelector('#title');
-let inputAuthor = document.querySelector('#author');
-let text = {};
+const ul = document.getElementById('list');
+const input = document.getElementById('task');
+const create = document.getElementById('add');
 
-let getJSON = function(url) {
-    return new Promise(function(resolve, reject) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
+
+function getJSON(url) {
+    return new Promise(function (resolve, reject) {
+        let xhr = new XMLHttpRequest();
+
+        xhr.open('GET', url)
+
         xhr.responseType = 'json';
-        xhr.onload = function() {
-            var status = xhr.status;
 
-            if (status === 200) {
-                resolve(xhr.response);
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                let todos = xhr.response
+                resolve(xhr.response)
+                showTodos(todos)
             } else {
-                reject(status);
+                reject(xhr.status)
             }
-        };
+        }
         xhr.send();
+    })
+}
+
+function showTodos(todos) {
+    let li = ul.appendChild(document.createElement('li'))
+    let lis = '';
+    todos.forEach(function (todo) {
+        li.innerHTML = todo.task;
+        let doneOrNot = todo.complited ? "done" : "not-done";
+        lis += `<li class="${doneOrNot}" data-id="${todo.id}">${todo.task}<button class="set-status">Change status</button><button class="delete-task">Delete</button></li>`;
+    })
+    li.innerHTML = lis;
+}
+
+function postJSON(url, data) {
+    return new Promise(function (resolve, reject) {
+        let xhr = new XMLHttpRequest();
+
+        xhr.open('POST', url)
+        xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+
+        xhr.responseType = "json";
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                resolve(xhr.response)
+            } else {
+                reject(xhr.status)
+            }
+        }
+        xhr.send(JSON.stringify(data));
     });
-};
-function saveJSON(url, data) {
-    return new Promise(function(resolve, reject) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', url, true);
-        xhr.setRequestHeader('Content-type', 'application/json', 'charset=utf-8');
+}
+
+function patchJSON(url, dataId, status) {
+    return new Promise(function (resolve, reject) {
+        let xhr = new XMLHttpRequest();
+
+        xhr.open('PATCH', url + `/${dataId}`)
+        xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+
         xhr.responseType = 'json';
-        xhr.onload = function() {
-            var status = xhr.status;
+
+        let data = {
+            complited: !status
+        }
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                resolve(xhr.response)
+            } else {
+                reject(xhr.status)
+            }
+        }
+        xhr.send(JSON.stringify(data));
+    })
+}
+
+function deleteJSON(url, dataId) {
+    return new Promise(function (resolve, reject) {
+        let xhr = new XMLHttpRequest();
+
+        xhr.open('delete', url + `/${dataId}`, true);
+        xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+
+        xhr.responseType = 'json';
+
+        xhr.onload = function () {
             resolve(xhr.response);
         };
-        xhr.onerror = function() {
-            reject('Error fetching' + url);
-        };
-        xhr.send(data);
-        li.innerHTML = `new post${inputTitle.value} author ${inputAuthor.value}`;
-        ul.append(li);
-        console.log('success', text), 
-        function(status) {
-            console.log('wrong', status)
-        }
-    })
-    
-}
-getJSON('http://localhost:3000/posts').then((data) => {
-    ul.innerHTML = data.map((post)=> {
-        let li = `<li> post ${post.title} of ${post.author} </li>`;
-        return li;
-    }).join('');
-    postLists.appendChild(ul);
-});
 
-formPosts.addEventListener('submit', (e) => {
-    e.preventDefault();
-    text = {
-        'title': inputTitle.value,
-        'author': inputAuthor.value
+        xhr.send(null);
+    });
+}
+
+getJSON('http://localhost:3000/todos')
+    .then(function (data) {
+        console.log('Success ', data);
+    }, function (status) {
+        console.log('Something went wrong.', status);
+    });
+
+
+create.addEventListener('click', (event) => {
+
+    let jsonArr = {
+        "task": input.value,
+        "complited": false,
     }
-    saveJSON('http://localhost:3000/posts', JSON.stringify(text)).then((text) => {
-        li.innerHTML = `new post ${inputTitle.value} author ${inputAuthor.value}`
-        ul.append(li)
-        console.log('success', text),
-        function(status) {
-        console.log('wrong', status)
-        }
-    })  
+
+    postJSON('http://localhost:3000/todos', jsonArr)
+        .then(function (data) {
+            console.log('Success ', data);
+        }, function (status) {
+            console.log('Something went wrong.', status);
+        });
 })
 
+ul.addEventListener('click', (event) => {
+    let dataId = event.target.closest('[data-id]').dataset.id;
+    let trueStatus = event.target.closest('li').classList.contains('done')
+    if (event.target.className === 'set-status') {
+        patchJSON('http://localhost:3000/todos', dataId, trueStatus)
+            .then(function (data) {
+                console.log('Success ', data);
+            }, function (status) {
+                console.log('Something went wrong.', status);
+            });
+        location.reload();
+    }
+    if (event.target.className === 'delete-task') {
+        deleteJSON('http://localhost:3000/todos', dataId)
+            .then(function (data) {
+                console.log('Success ', data);
+            }, function (status) {
+                console.log('Something went wrong.', status);
+            });
+        location.reload();
+    }
+})
